@@ -178,7 +178,7 @@
 
   <!-- 画像化用のサマリー要素 -->
   <div id="summary-card">
-    <h2>ドラマト11th＆スタマイ10th アニバストア／購入リスト</h2>
+    <h2>ドラマト11th＆スタマイ10th アニバフェス／購入リスト</h2>
     <div id="summary-content"></div>
     <div class="summary-total-box">
       <div class="summary-total-row">
@@ -520,7 +520,7 @@ function generateImage() {
 
     // PNGダウンロード
     const link = document.createElement('a');
-    link.download = 'goods_order_summary.png';
+    link.download = 'アニバフェス購入リスト.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   }).catch(err => {
