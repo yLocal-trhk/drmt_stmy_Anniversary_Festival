@@ -76,6 +76,15 @@
     }
     .footer-row { display: flex; justify-content: space-between; align-items: center; }
     .total-price-text { font-size: 1.2rem; font-weight: bold; }
+    .footer-btn-group { display: flex; gap: 8px; }
+    
+    .reset-btn {
+      background: #666; color: white; border: none; padding: 6px 12px;
+      font-size: 0.85rem; font-weight: bold; border-radius: 20px; cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .reset-btn:hover { background: #555; }
+
     .bonus-box {
       margin-top: 6px; padding-top: 6px; border-top: 1px solid #444;
       display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #ffeb3b;
@@ -150,7 +159,7 @@
 </head>
 <body>
 
-  <h1>ドラマト11th＆スタマイ10th アニバフェス／グッズ計算</h1>
+  <h1>ドラマト11th＆スタマイ10th<br>アニバフェス／グッズ計算</h1>
 
   <!-- ドラッグ王子とマトリ姫 -->
   <div class="section-title">ドラッグ王子とマトリ姫</div>
@@ -230,7 +239,10 @@
         <span style="font-size:0.8rem; color:#aaa;">合計金額</span><br>
         <span id="total-price" class="total-price-text">¥0</span>
       </div>
-      <button class="download-btn" onclick="generateImage()">📸 画像として保存</button>
+      <div class="footer-btn-group">
+        <button class="reset-btn" onclick="resetSelections()">🔄 リセット</button>
+        <button class="download-btn" onclick="generateImage()">📸 画像として保存</button>
+      </div>
     </div>
     <div class="bonus-box">
       <span>🎁 特典獲得数: <strong id="bonus-count">0</strong> 枚</span>
@@ -244,6 +256,7 @@ const charsDoramato = ["青山", "由井", "関", "夏目", "今大路", "渡部
 const charsStamai = ["青山", "由井", "関", "夏目", "今大路", "渡部", "朝霧", "菅野", "荒木田", "服部", "桧山", "大谷", "神楽", "槙", "誠", "京介", "新堂", "カナメ", "桐嶋", "九条", "宮瀬", "可愛", "宝生", "日向", "早乙女", "瀬尾"];
 const affiliations = ["マトリ", "警視庁", "Revel", "都築兄弟", "九条家", "瀬尾研究室"];
 
+const STORAGE_KEY = 'drmt_stmy_cart_selection';
 const itemsData = {
   dmVenue: [
     { name: "ホログラムチケット風カード", price: 440 }
@@ -319,6 +332,61 @@ const itemsData = {
     { name: "アルバムカード", price: 660 }
   ]
 };
+
+function getItemKey(input) {
+  const cat = input.dataset.category || '';
+  const name = input.dataset.name || '';
+  const char = input.dataset.char || '';
+  return `${cat}_${name}_${char}`;
+}
+
+function saveSelections() {
+  const data = {};
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    const qty = parseInt(input.value) || 0;
+    if (qty > 0) {
+      data[getItemKey(input)] = qty;
+    }
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadSelections() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+      const key = getItemKey(input);
+      if (data[key] !== undefined) {
+        input.value = data[key];
+        // 数量が指定されているアコーディオンエリアを自動展開
+        if (data[key] > 0) {
+          const charList = input.closest('.char-list');
+          if (charList) charList.classList.add('open');
+        }
+      }
+    });
+  } catch(e) {
+    console.error("ローカルストレージの読み込みに失敗しました", e);
+  }
+}
+
+function resetSelections() {
+  if (!confirm('選択内容をすべてリセットしますか？')) return;
+  
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.value = 0;
+  });
+  
+  // 展開されているキャラ/所属リストをすべて閉じる
+  document.querySelectorAll('.char-list.open').forEach(el => {
+    el.classList.remove('open');
+  });
+
+  localStorage.removeItem(STORAGE_KEY);
+  calculateTotal();
+}
 
 function createItemCard(item, isCharItem = false, charList = [], categoryKey = "", index = 0) {
   // 所属選択型（手ぬぐい等）
@@ -454,6 +522,8 @@ function calculateTotal() {
   } else {
     document.getElementById('next-bonus').innerText = `（あと ¥${needed.toLocaleString()} で+1枚）`;
   }
+
+  saveSelections();
 }
 
 function generateImage() {
@@ -529,7 +599,10 @@ function generateImage() {
   });
 }
 
+// 初期描画と保存データの復元
 renderAll();
+loadSelections();
+calculateTotal();
 </script>
 </body>
 </html>
